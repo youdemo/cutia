@@ -3,7 +3,7 @@ import { setupI18nInstance } from "@i18next-toolkit/react";
 let initialized = false;
 
 export function initI18n() {
-	if (initialized) {
+	if (initialized || typeof window === "undefined") {
 		return;
 	}
 	initialized = true;
