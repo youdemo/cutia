@@ -33,7 +33,7 @@ export default function RootLayout({
 				<I18nProvider>
 					<ThemeProvider
 						attribute="class"
-						defaultTheme="system"
+						defaultTheme="dark"
 						disableTransitionOnChange={true}
 					>
 						<TooltipProvider>
