@@ -14,6 +14,16 @@ import { Languages, Check } from "lucide-react";
 const SUPPORTED_LANGUAGES = [
 	{ code: "en", label: "English" },
 	{ code: "zh", label: "中文" },
+	{ code: "ja", label: "日本語" },
+	{ code: "ko", label: "한국어" },
+	{ code: "es", label: "Español" },
+	{ code: "pt", label: "Português" },
+	{ code: "fr", label: "Français" },
+	{ code: "de", label: "Deutsch" },
+	{ code: "id", label: "Bahasa Indonesia" },
+	{ code: "vi", label: "Tiếng Việt" },
+	{ code: "ru", label: "Русский" },
+	{ code: "it", label: "Italiano" },
 ] as const;
 
 interface LanguageToggleProps {

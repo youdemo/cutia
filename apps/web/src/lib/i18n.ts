@@ -10,6 +10,6 @@ export function initI18n() {
 
 	setupI18nInstance({
 		defaultLanguage: "en",
-		supportedLngs: ["en", "zh"],
+		supportedLngs: ["en", "zh", "ja", "ko", "es", "pt", "fr", "de", "id", "vi", "ru", "it"],
 	});
 }

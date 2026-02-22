@@ -13,7 +13,7 @@ The project uses [@i18next-toolkit](https://github.com/moonrailgun/i18next-toolk
 - **Init**: `apps/web/src/lib/i18n.ts`
 - **Provider**: `apps/web/src/components/providers/i18n-provider.tsx` (mounted in layout)
 - **Config**: `apps/web/.i18next-toolkitrc.json`
-- **Locales**: `apps/web/public/locales/{en,zh}/translation.json`
+- **Locales**: `apps/web/public/locales/{en,zh,ja,ko,es,pt,fr,de,id,vi,ru,it}/translation.json`
 
 ## Usage
 
@@ -57,7 +57,7 @@ setLanguage("zh");
 
 1. Write copy with `t("...")` or `i18next.t("...")` using the source string as the key.
 2. Run `bun run translation:extract` in `apps/web` to extract and merge keys into `public/locales/en/translation.json`.
-3. Add Chinese translations in `public/locales/zh/translation.json` for new keys.
+3. Add translations in each locale file. New locales are initialized with en content; run `translation:translate` or translate manually.
 
 ## Rules
 
