@@ -1,9 +1,15 @@
 "use client";
 
-import { Shield, Globe, Code2, Zap, Layers, MonitorPlay } from "lucide-react";
+import { Shield, Globe, Code2, Sparkles, Layers, MonitorPlay } from "lucide-react";
 import { motion } from "motion/react";
 
 const FEATURES = [
+	{
+		icon: Sparkles,
+		title: "AI First",
+		description:
+			"Powered by AI to streamline your editing workflow. Generate images, transcribe audio, and create captions — all built in.",
+	},
 	{
 		icon: Shield,
 		title: "Privacy First",
@@ -21,12 +27,6 @@ const FEATURES = [
 		title: "Open Source",
 		description:
 			"Fully open source and community-driven. Inspect the code, contribute, or fork it for your needs.",
-	},
-	{
-		icon: Zap,
-		title: "Fast & Lightweight",
-		description:
-			"Built for speed with modern web technologies. No bloated downloads or slow startup times.",
 	},
 	{
 		icon: Layers,
