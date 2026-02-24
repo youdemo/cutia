@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
 	FullScreenIcon,
-	MoreHorizontalIcon,
+	MoreVerticalIcon,
 	MusicNote03Icon,
 	PauseIcon,
 	PlayIcon,
@@ -181,7 +181,10 @@ function AssetPreviewPlayer({ asset }: { asset: MediaAsset }) {
 	if (asset.type === "audio") {
 		return (
 			<div className="flex h-full w-full flex-col items-center justify-center gap-4">
-				<HugeiconsIcon icon={MusicNote03Icon} className="text-muted-foreground size-16" />
+				<HugeiconsIcon
+					icon={MusicNote03Icon}
+					className="text-muted-foreground size-16"
+				/>
 				<span className="text-muted-foreground text-sm">{asset.name}</span>
 				{/* biome-ignore lint/a11y/useMediaCaption: preview playback */}
 				<audio key={asset.id} src={url} controls autoPlay className="w-64" />
@@ -300,13 +303,11 @@ function PreviewToolbar({
 							onMouseDown={(event) => event.preventDefault()}
 							title={t("More options")}
 						>
-							<HugeiconsIcon icon={MoreHorizontalIcon} />
+							<HugeiconsIcon icon={MoreVerticalIcon} />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" side="top">
-						<DropdownMenuItem
-							onClick={() => exportCurrentFrame({ editor })}
-						>
+						<DropdownMenuItem onClick={() => exportCurrentFrame({ editor })}>
 							{t("Export current frame")}
 						</DropdownMenuItem>
 					</DropdownMenuContent>
@@ -403,7 +404,10 @@ function PreviewCanvas() {
 			ref={containerRef}
 			className="relative flex h-full w-full items-center justify-center"
 		>
-			<div className="relative" style={{ width: displaySize.width, height: displaySize.height }}>
+			<div
+				className="relative"
+				style={{ width: displaySize.width, height: displaySize.height }}
+			>
 				<canvas
 					ref={canvasRef}
 					width={nativeWidth}
