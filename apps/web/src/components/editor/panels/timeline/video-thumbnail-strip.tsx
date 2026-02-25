@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useLayoutEffect, useRef, useMemo } from "react";
 import { TIMELINE_CONSTANTS } from "@/constants/timeline-constants";
 import { timelineThumbnailCache } from "@/services/timeline-thumbnail/service";
+
+const ASYNC_LOAD_DEBOUNCE_MS = 150;
+const MAX_CANVAS_DIMENSION = 8192;
+const RENDER_PADDING_PX = 200;
 
 interface VideoThumbnailStripProps {
 	mediaId: string;
 	file: File;
+	thumbnailUrl?: string;
 	trimStart: number;
 	duration: number;
 	elementWidth: number;
@@ -56,9 +61,37 @@ function drawCoverCrop({
 	ctx.drawImage(image, sx, sy, sw, sh, destX, destY, destWidth, destHeight);
 }
 
+function findScrollContainer(element: HTMLElement): HTMLElement | null {
+	let current = element.parentElement;
+	while (current) {
+		if (current.scrollWidth > current.clientWidth + 1) return current;
+		current = current.parentElement;
+	}
+	return null;
+}
+
+function getVisibleRange({
+	elementRect,
+	containerRect,
+	elementWidth,
+}: {
+	elementRect: DOMRect;
+	containerRect: DOMRect;
+	elementWidth: number;
+}): { start: number; end: number } {
+	const relativeLeft = containerRect.left - elementRect.left;
+	const start = Math.max(0, relativeLeft - RENDER_PADDING_PX);
+	const end = Math.min(
+		elementWidth,
+		relativeLeft + containerRect.width + RENDER_PADDING_PX,
+	);
+	return { start, end };
+}
+
 export function VideoThumbnailStrip({
 	mediaId,
 	file,
+	thumbnailUrl,
 	trimStart,
 	duration,
 	elementWidth,
@@ -71,97 +104,171 @@ export function VideoThumbnailStrip({
 }: VideoThumbnailStripProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const renderIdRef = useRef(0);
+	const drawIdRef = useRef(0);
+	const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+	const rafRef = useRef<number>(0);
 
 	const tileAspect = mediaWidth / mediaHeight;
 	const tileWidth = Math.round(trackHeight * tileAspect);
 	const drawHeight = isSelected ? trackHeight - 8 : trackHeight;
 	const drawOffsetY = isSelected ? 4 : 0;
 
-	const renderThumbnails = useCallback(async () => {
+	const fallbackStyle = useMemo(
+		() =>
+			thumbnailUrl
+				? {
+						backgroundImage: `url(${thumbnailUrl})`,
+						backgroundRepeat: "repeat-x" as const,
+						backgroundSize: `${tileWidth}px ${drawHeight}px`,
+						backgroundPosition: `left ${drawOffsetY}px`,
+					}
+				: undefined,
+		[thumbnailUrl, tileWidth, drawHeight, drawOffsetY],
+	);
+
+	useLayoutEffect(() => {
 		const renderId = ++renderIdRef.current;
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 
+		const parentEl = canvas.parentElement;
+		if (!parentEl) return;
+
+		const scrollContainer = findScrollContainer(canvas);
 		const dpr = window.devicePixelRatio || 1;
-		const canvasWidth = Math.ceil(elementWidth);
-		const canvasHeight = trackHeight;
-
-		canvas.width = canvasWidth * dpr;
-		canvas.height = canvasHeight * dpr;
-		canvas.style.width = `${canvasWidth}px`;
-		canvas.style.height = `${canvasHeight}px`;
-
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-		const tileCount = Math.ceil(canvasWidth / tileWidth);
+		const maxLogicalWidth = Math.floor(MAX_CANVAS_DIMENSION / dpr);
 		const pixelsPerSecond =
 			TIMELINE_CONSTANTS.PIXELS_PER_SECOND * zoomLevel;
 
-		const frameTimes: number[] = [];
-		for (let i = 0; i < tileCount; i++) {
-			const timeOffset = (i * tileWidth) / pixelsPerSecond;
-			const videoTime = trimStart + timeOffset;
-			const clampedTime = Math.min(videoTime, trimStart + duration);
-			frameTimes.push(clampedTime);
-		}
+		const draw = () => {
+			if (renderId !== renderIdRef.current) return;
 
-		const needsAsyncLoad: number[] = [];
+			const drawId = ++drawIdRef.current;
+			const elementRect = parentEl.getBoundingClientRect();
+			const containerRect = scrollContainer
+				? scrollContainer.getBoundingClientRect()
+				: new DOMRect(0, 0, window.innerWidth, window.innerHeight);
 
-		for (let i = 0; i < frameTimes.length; i++) {
-			const exact = timelineThumbnailCache.getCachedThumbnail({
-				mediaId,
-				time: frameTimes[i],
-				fps,
+			const { start: visStart, end: visEnd } = getVisibleRange({
+				elementRect,
+				containerRect,
+				elementWidth,
 			});
-			const fallback =
-				exact ??
-				timelineThumbnailCache.getNearestCachedThumbnail({
+
+			const renderWidth = Math.ceil(visEnd - visStart);
+			if (renderWidth <= 0) return;
+
+			const cappedWidth = Math.min(renderWidth, maxLogicalWidth);
+			const renderStart = visStart;
+
+			const targetW = cappedWidth * dpr;
+			const targetH = trackHeight * dpr;
+			if (canvas.width !== targetW || canvas.height !== targetH) {
+				canvas.width = targetW;
+				canvas.height = targetH;
+			}
+			canvas.style.width = `${cappedWidth}px`;
+			canvas.style.height = `${trackHeight}px`;
+			canvas.style.left = `${Math.round(renderStart)}px`;
+
+			const ctx = canvas.getContext("2d");
+			if (!ctx) return;
+
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			ctx.clearRect(0, 0, cappedWidth, trackHeight);
+
+			const startTile = Math.floor(renderStart / tileWidth);
+			const endTile = Math.ceil(visEnd / tileWidth);
+
+			const needsAsyncLoad: { index: number; time: number }[] = [];
+
+			for (let i = startTile; i < endTile; i++) {
+				const destX = i * tileWidth - renderStart;
+				const timeOffset = (i * tileWidth) / pixelsPerSecond;
+				const videoTime = trimStart + timeOffset;
+				const frameTime = Math.min(videoTime, trimStart + duration);
+
+				const exact = timelineThumbnailCache.getCachedThumbnail({
 					mediaId,
-					time: frameTimes[i],
+					time: frameTime,
+					fps,
 				});
+				const image =
+					exact ??
+					timelineThumbnailCache.getNearestCachedThumbnail({
+						mediaId,
+						time: frameTime,
+					});
 
-			if (fallback) {
-				drawCoverCrop({
-					ctx,
-					image: fallback,
-					destX: i * tileWidth,
-					destY: drawOffsetY,
-					destWidth: tileWidth,
-					destHeight: drawHeight,
-				});
+				if (image) {
+					drawCoverCrop({
+						ctx,
+						image,
+						destX,
+						destY: drawOffsetY,
+						destWidth: tileWidth,
+						destHeight: drawHeight,
+					});
+				}
+
+				if (!exact) {
+					needsAsyncLoad.push({ index: i, time: frameTime });
+				}
 			}
 
-			if (!exact) {
-				needsAsyncLoad.push(i);
+			if (debounceRef.current) clearTimeout(debounceRef.current);
+
+			if (needsAsyncLoad.length > 0) {
+				debounceRef.current = setTimeout(() => {
+					if (
+						renderId !== renderIdRef.current ||
+						drawId !== drawIdRef.current
+					)
+						return;
+
+					timelineThumbnailCache.loadThumbnailsBatch({
+						mediaId,
+						file,
+						times: needsAsyncLoad,
+						fps,
+						onThumbnail: ({ index, bitmap }) => {
+							if (
+								renderId !== renderIdRef.current ||
+								drawId !== drawIdRef.current
+							)
+								return;
+
+							const destX = index * tileWidth - renderStart;
+							drawCoverCrop({
+								ctx,
+								image: bitmap,
+								destX,
+								destY: drawOffsetY,
+								destWidth: tileWidth,
+								destHeight: drawHeight,
+							});
+						},
+					});
+				}, ASYNC_LOAD_DEBOUNCE_MS);
 			}
-		}
+		};
 
-		for (const i of needsAsyncLoad) {
-			if (renderId !== renderIdRef.current) return;
+		draw();
 
-			const thumbnail = await timelineThumbnailCache.getThumbnail({
-				mediaId,
-				file,
-				time: frameTimes[i],
-				fps,
-			});
+		const onScroll = () => {
+			if (rafRef.current) cancelAnimationFrame(rafRef.current);
+			rafRef.current = requestAnimationFrame(draw);
+		};
 
-			if (renderId !== renderIdRef.current) return;
-			if (!thumbnail) continue;
+		scrollContainer?.addEventListener("scroll", onScroll, {
+			passive: true,
+		});
 
-			drawCoverCrop({
-				ctx,
-				image: thumbnail,
-				destX: i * tileWidth,
-				destY: drawOffsetY,
-				destWidth: tileWidth,
-				destHeight: drawHeight,
-			});
-		}
+		return () => {
+			scrollContainer?.removeEventListener("scroll", onScroll);
+			if (rafRef.current) cancelAnimationFrame(rafRef.current);
+			if (debounceRef.current) clearTimeout(debounceRef.current);
+		};
 	}, [
 		mediaId,
 		file,
@@ -176,14 +283,16 @@ export function VideoThumbnailStrip({
 		drawOffsetY,
 	]);
 
-	useEffect(() => {
-		renderThumbnails();
-	}, [renderThumbnails]);
-
 	return (
-		<canvas
-			ref={canvasRef}
-			className="pointer-events-none absolute inset-0"
-		/>
+		<>
+			<div
+				className="pointer-events-none absolute inset-0"
+				style={fallbackStyle}
+			/>
+			<canvas
+				ref={canvasRef}
+				className="pointer-events-none absolute top-0"
+			/>
+		</>
 	);
 }

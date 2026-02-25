@@ -459,6 +459,7 @@ function ElementContent({
 					<VideoThumbnailStrip
 						mediaId={element.mediaId}
 						file={mediaAsset.file}
+						thumbnailUrl={mediaAsset.thumbnailUrl}
 						trimStart={element.trimStart}
 						duration={element.duration}
 						elementWidth={elementWidth}
