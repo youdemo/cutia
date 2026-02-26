@@ -38,10 +38,8 @@ export function AgentChat() {
 	const handleScroll = useCallback(() => {
 		const el = scrollRef.current;
 		if (!el) return;
-		const distanceFromBottom =
-			el.scrollHeight - el.scrollTop - el.clientHeight;
-		isUserScrolledUp.current =
-			distanceFromBottom > SCROLL_BOTTOM_THRESHOLD;
+		const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+		isUserScrolledUp.current = distanceFromBottom > SCROLL_BOTTOM_THRESHOLD;
 	}, []);
 
 	if (messages.length !== prevMessageCount.current) {
@@ -68,7 +66,23 @@ export function AgentChat() {
 		}
 	}, [pendingConfirmation, scrollToBottom]);
 
-	const toolResultMap = new Map<string, { success: boolean; message: string }>();
+	useEffect(() => {
+		if (status === "idle") {
+			return;
+		}
+
+		const handler = (event: BeforeUnloadEvent) => {
+			event.preventDefault();
+		};
+
+		window.addEventListener("beforeunload", handler);
+		return () => window.removeEventListener("beforeunload", handler);
+	}, [status]);
+
+	const toolResultMap = new Map<
+		string,
+		{ success: boolean; message: string }
+	>();
 	for (const m of messages) {
 		if (m.role === "tool" && m.toolCallId) {
 			try {
@@ -144,8 +158,7 @@ export function AgentChat() {
 						<p className="mb-2 text-sm font-medium">
 							{pendingConfirmation.toolCalls.length > 1
 								? t("Confirm {{count}} operations", {
-										count: pendingConfirmation.toolCalls
-											.length,
+										count: pendingConfirmation.toolCalls.length,
 									})
 								: t("Confirm operation")}
 						</p>
@@ -156,21 +169,13 @@ export function AgentChat() {
 										{tc.description}
 									</p>
 									<pre className="bg-background overflow-x-auto rounded p-2 text-xs">
-										{JSON.stringify(
-											tc.arguments,
-											null,
-											2,
-										)}
+										{JSON.stringify(tc.arguments, null, 2)}
 									</pre>
 								</div>
 							))}
 						</div>
 						<div className="flex gap-2">
-							<Button
-								type="button"
-								size="sm"
-								onClick={confirmToolCall}
-							>
+							<Button type="button" size="sm" onClick={confirmToolCall}>
 								<HugeiconsIcon
 									icon={CheckmarkCircle02Icon}
 									className="mr-1 h-3.5 w-3.5"
