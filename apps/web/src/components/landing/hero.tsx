@@ -99,7 +99,7 @@ export function Hero() {
 						className="dark:invert"
 					/>
 					<span className="text-muted-foreground text-sm font-medium">
-						{t('Privacy-first video editing')}
+						{t('AI-native video editor')}
 					</span>
 				</motion.div>
 
@@ -127,7 +127,7 @@ export function Hero() {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
 				>
-					{t('A simple yet powerful open-source video editor. No uploads, no tracking — your media stays on your device.')}
+					{t('An AI-native, open-source video editor and free alternative to CapCut. No uploads, no tracking — your media stays on your device.')}
 				</motion.p>
 
 				<motion.div

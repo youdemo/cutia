@@ -1,7 +1,9 @@
 import { Hero } from "@/components/landing/hero";
 import { Features } from "@/components/landing/features";
+import { FAQSection } from "@/components/landing/faq-section";
 import { CTASection } from "@/components/landing/cta-section";
 import { StarField } from "@/components/landing/starfield";
+import { HomepageJsonLd } from "@/components/landing/json-ld";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import type { Metadata } from "next";
@@ -11,17 +13,36 @@ export const metadata: Metadata = {
 	alternates: {
 		canonical: SITE_URL,
 	},
+	keywords: [
+		"AI video editor",
+		"AI-native video editor",
+		"AI video editing",
+		"CapCut alternative",
+		"free CapCut alternative",
+		"open source CapCut alternative",
+		"browser video editor",
+		"online video editor",
+		"free video editor",
+		"open source video editor",
+		"privacy-first video editor",
+		"no upload video editor",
+		"video editor",
+		"WebM editor",
+		"MP4 editor",
+	],
 };
 
 export default async function Home() {
 	return (
-		<div className="min-h-svh">
+		<main className="min-h-svh">
+			<HomepageJsonLd />
 			<StarField />
 			<Header />
 			<Hero />
 			<Features />
+			<FAQSection />
 			<CTASection />
 			<Footer />
-		</div>
+		</main>
 	);
 }

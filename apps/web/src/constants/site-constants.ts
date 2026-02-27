@@ -3,7 +3,7 @@ export const SITE_URL = "https://cutia.msgbyte.com";
 export const SITE_INFO = {
 	title: "Cutia",
 	description:
-		"A simple but powerful video editor that gets the job done. In your browser.",
+		"Cutia is an AI-native, open-source video editor in your browser — a free, privacy-first alternative to CapCut. AI-powered editing, multi-track timeline, MP4/WebM export with no uploads.",
 	url: SITE_URL,
 	openGraphImage: "/open-graph/default.jpg",
 	twitterImage: "/open-graph/default.jpg",

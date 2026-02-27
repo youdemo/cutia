@@ -9,9 +9,9 @@ export function Features() {
 	const features = [
 		{
 			icon: Sparkles,
-			title: t("AI First"),
+			title: t("AI-Native"),
 			description: t(
-				"Powered by AI to streamline your editing workflow. Generate images, transcribe audio, and create captions — all built in.",
+				"AI is built into every step of your workflow. Generate images, transcribe audio, create captions, and let the AI agent edit videos for you.",
 			),
 		},
 		{
