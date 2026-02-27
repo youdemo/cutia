@@ -42,6 +42,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { CharacterPicker } from "@/components/characters/character-picker";
+import { CharacterDetailDialog } from "@/components/characters/character-detail";
+import { useCharacterStore } from "@/stores/character-store";
+import type { AICharacter } from "@/types/character";
+import { UserIcon } from "@hugeicons/core-free-icons";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const ASPECT_RATIOS = [
 	{ value: "auto", label: "Auto" },
@@ -1015,6 +1021,112 @@ function AIHistoryView() {
 	);
 }
 
+function AICharactersView() {
+	const { t } = useTranslation();
+	const router = useRouter();
+	const { characters } = useCharacterStore();
+	const [viewingCharacter, setViewingCharacter] =
+		useState<AICharacter | null>(null);
+
+	return (
+		<>
+			<div className="flex flex-col gap-4">
+				<div className="flex items-center justify-between">
+					<span className="text-muted-foreground text-xs font-medium">
+						{t("{{num}} characters", { num: characters.length })}
+					</span>
+				<Link href="/characters">
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="text-muted-foreground h-auto px-2 py-1 text-xs"
+					>
+						{t("Manage")}
+					</Button>
+				</Link>
+				</div>
+
+				{characters.length === 0 ? (
+					<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+						<HugeiconsIcon
+							icon={UserIcon}
+							className="text-muted-foreground size-10"
+						/>
+						<p className="text-muted-foreground text-sm">
+							{t("No characters yet")}
+						</p>
+						<p className="text-muted-foreground text-xs">
+							{t("Create characters in the character library to use as reference images.")}
+						</p>
+					<Link href="/characters">
+						<Button type="button" variant="outline" size="sm">
+							{t("Go to Character Library")}
+						</Button>
+					</Link>
+					</div>
+				) : (
+					<div className="flex flex-col gap-2">
+						{characters.map((character) => (
+							<button
+								key={character.id}
+								type="button"
+								className="bg-muted/50 hover:bg-muted/80 flex w-full items-center gap-3 rounded-md border p-2 text-left transition-colors"
+								onClick={() => setViewingCharacter(character)}
+								onKeyDown={(event) => {
+									if (event.key === "Enter")
+										setViewingCharacter(character);
+								}}
+							>
+								{character.thumbnailDataUrl ? (
+									/* biome-ignore lint: data URL thumbnail */
+									<img
+										src={character.thumbnailDataUrl}
+										alt={character.name}
+										className="size-12 shrink-0 rounded-md object-cover"
+									/>
+								) : (
+									<div className="bg-muted flex size-12 shrink-0 items-center justify-center rounded-md">
+										<HugeiconsIcon
+											icon={UserIcon}
+											className="text-muted-foreground size-5"
+										/>
+									</div>
+								)}
+								<div className="flex min-w-0 flex-col gap-0.5">
+									<span className="text-foreground truncate text-xs font-medium">
+										{character.name}
+									</span>
+									{character.description && (
+										<p className="text-muted-foreground line-clamp-2 text-[10px]">
+											{character.description}
+										</p>
+									)}
+									<span className="text-muted-foreground text-[10px]">
+										{t("{{num}} images", { num: character.images.length })}
+									</span>
+								</div>
+							</button>
+						))}
+					</div>
+				)}
+			</div>
+
+			<CharacterDetailDialog
+				character={viewingCharacter}
+				isOpen={viewingCharacter !== null}
+				onOpenChange={(open) => {
+					if (!open) setViewingCharacter(null);
+				}}
+				onEdit={() => {
+					setViewingCharacter(null);
+					router.push("/characters");
+				}}
+			/>
+		</>
+	);
+}
+
 export function AIView() {
 	const { t } = useTranslation();
 
@@ -1031,6 +1143,11 @@ export function AIView() {
 					value: "ai-video",
 					label: t("AI Video"),
 					content: <AIVideoView />,
+				},
+				{
+					value: "ai-characters",
+					label: t("Characters"),
+					content: <AICharactersView />,
 				},
 				{
 					value: "ai-history",
