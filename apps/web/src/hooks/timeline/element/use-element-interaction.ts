@@ -178,6 +178,7 @@ export function useElementInteraction({
 	const tracks = editor.timeline.getTracks();
 	const { snapElementEdge } = useTimelineSnapping();
 	const {
+		selectedElements,
 		isElementSelected,
 		selectElement,
 		handleElementClick: handleSelectionClick,
@@ -453,7 +454,21 @@ export function useElementInteraction({
 				return;
 			}
 
-			if (dropTarget.isNewTrack) {
+			const timeDelta = snappedTime - dragState.startElementTime;
+			const isDraggedElementSelected = selectedElements.some(
+				(element) =>
+					element.elementId === dragState.elementId &&
+					element.trackId === dragState.trackId,
+			);
+			const hasBatchSelection =
+				isDraggedElementSelected && selectedElements.length > 1;
+
+			if (hasBatchSelection && timeDelta !== 0) {
+				editor.timeline.moveElementsByDelta({
+					elements: selectedElements,
+					timeDelta,
+				});
+			} else if (dropTarget.isNewTrack) {
 				const newTrackId = generateUUID();
 
 				editor.timeline.moveElement({
@@ -484,9 +499,11 @@ export function useElementInteraction({
 	}, [
 		dragState.isDragging,
 		dragState.elementId,
+		dragState.startElementTime,
 		dragState.startMouseY,
 		dragState.trackId,
 		dragState.currentTime,
+		selectedElements,
 		zoomLevel,
 		tracks,
 		endDrag,

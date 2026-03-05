@@ -2,6 +2,7 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+	DragDropIcon,
 	Delete02Icon,
 	TaskAdd02Icon,
 	ViewIcon,
@@ -52,6 +53,8 @@ import { useEditor } from "@/hooks/use-editor";
 import { useTimelinePlayhead } from "@/hooks/timeline/use-timeline-playhead";
 import { DragLine } from "./drag-line";
 import { invokeAction } from "@/lib/actions";
+import { useTrackReorder } from "@/hooks/timeline/use-track-reorder";
+import { cn } from "@/utils/ui";
 
 export function Timeline() {
 	const tracksContainerHeight = { min: 0, max: 800 };
@@ -196,6 +199,8 @@ export function Timeline() {
 		trackLabelsScrollRef,
 	});
 
+	const { reorderState, handleTrackDragStart } = useTrackReorder();
+
 	const timelineHeaderHeight =
 		timelineHeaderRef.current?.getBoundingClientRect().height ?? 0;
 
@@ -244,15 +249,44 @@ export function Timeline() {
 									className="size-full overflow-y-hidden"
 									ref={trackLabelsScrollRef}
 								>
-									<div className="flex flex-col gap-1">
-										{tracks.map((track) => (
+								<div className="flex flex-col gap-1">
+									{tracks.map((track, index) => {
+										const isDragTarget =
+											reorderState.isDragging &&
+											reorderState.dragOverIndex === index &&
+											reorderState.dragTrackId !== track.id;
+										const isBeingDragged =
+											reorderState.isDragging &&
+											reorderState.dragTrackId === track.id;
+
+										return (
 											<div
 												key={track.id}
-												className="group flex items-center px-3"
+												className={cn(
+													"group flex items-center px-1",
+													isBeingDragged && "opacity-40",
+													isDragTarget &&
+														"border-primary border-t-2",
+												)}
 												style={{
 													height: `${getTrackHeight({ type: track.type })}px`,
 												}}
 											>
+												<HugeiconsIcon
+													icon={DragDropIcon}
+													className="text-muted-foreground/50 group-hover:text-muted-foreground size-3.5 shrink-0 cursor-grab active:cursor-grabbing"
+													onMouseDown={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
+														if (trackLabelsRef.current) {
+															handleTrackDragStart({
+																trackId: track.id,
+																mouseY: event.clientY,
+																container: trackLabelsRef.current,
+															});
+														}
+													}}
+												/>
 												<div className="flex min-w-0 flex-1 items-center justify-end gap-2">
 													{process.env.NODE_ENV === "development" &&
 														isMainTrack(track) && (
@@ -289,8 +323,9 @@ export function Timeline() {
 													<TrackIcon track={track} />
 												</div>
 											</div>
-										))}
-									</div>
+										);
+									})}
+								</div>
 								</ScrollArea>
 							</div>
 						)}
@@ -399,24 +434,32 @@ export function Timeline() {
 										)}px`,
 									}}
 								>
-									{tracks.length === 0 ? (
-										<div />
-									) : (
-										tracks.map((track, index) => (
-											<ContextMenu key={track.id}>
-												<ContextMenuTrigger asChild>
-													<div
-														className="absolute right-0 left-0"
-														style={{
-															top: `${getCumulativeHeightBefore({
-																tracks,
-																trackIndex: index,
-															})}px`,
-															height: `${getTrackHeight({
-																type: track.type,
-															})}px`,
-														}}
-													>
+								{tracks.length === 0 ? (
+									<div />
+								) : (
+									tracks.map((track, index) => {
+										const isBeingDragged =
+											reorderState.isDragging &&
+											reorderState.dragTrackId === track.id;
+
+										return (
+										<ContextMenu key={track.id}>
+											<ContextMenuTrigger asChild>
+												<div
+													className={cn(
+														"absolute right-0 left-0",
+														isBeingDragged && "opacity-40",
+													)}
+													style={{
+														top: `${getCumulativeHeightBefore({
+															tracks,
+															trackIndex: index,
+														})}px`,
+														height: `${getTrackHeight({
+															type: track.type,
+														})}px`,
+													}}
+												>
 														<TimelineTrackContent
 															track={track}
 															zoomLevel={zoomLevel}
@@ -492,7 +535,8 @@ export function Timeline() {
 													</ContextMenuItem>
 												</ContextMenuContent>
 											</ContextMenu>
-										))
+										);
+									})
 									)}
 								</div>
 							</div>

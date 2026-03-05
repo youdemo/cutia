@@ -125,6 +125,15 @@ export function TimelineElement({
 	);
 
 	const isBeingDragged = dragState.elementId === element.id;
+	const isBatchDragged =
+		!isBeingDragged &&
+		dragState.isDragging &&
+		isCurrentElementSelected &&
+		selectedElements.length > 1;
+	const timeDelta =
+		dragState.isDragging
+			? dragState.currentTime - dragState.startElementTime
+			: 0;
 	const dragOffsetY =
 		isBeingDragged && dragState.isDragging
 			? dragState.currentMouseY - dragState.startMouseY
@@ -132,7 +141,9 @@ export function TimelineElement({
 	const elementStartTime =
 		isBeingDragged && dragState.isDragging
 			? dragState.currentTime
-			: element.startTime;
+			: isBatchDragged
+				? Math.max(0, element.startTime + timeDelta)
+				: element.startTime;
 	const displayedStartTime = isResizing ? currentStartTime : elementStartTime;
 	const displayedDuration = isResizing ? currentDuration : element.duration;
 	const elementWidth =

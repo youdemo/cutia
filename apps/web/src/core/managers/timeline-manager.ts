@@ -19,8 +19,10 @@ import {
 import {
 	AddTrackCommand,
 	RemoveTrackCommand,
+	ReorderTracksCommand,
 	ToggleTrackMuteCommand,
 	ToggleTrackVisibilityCommand,
+	BatchMoveElementsCommand,
 	InsertElementCommand,
 	UpdateElementTrimCommand,
 	UpdateElementDurationCommand,
@@ -51,6 +53,11 @@ export class TimelineManager {
 
 	removeTrack({ trackId }: { trackId: string }): void {
 		const command = new RemoveTrackCommand(trackId);
+		this.editor.command.execute({ command });
+	}
+
+	reorderTracks({ trackIds }: { trackIds: string[] }): void {
+		const command = new ReorderTracksCommand(trackIds);
 		this.editor.command.execute({ command });
 	}
 
@@ -109,6 +116,17 @@ export class TimelineManager {
 		startTime: number;
 	}): void {
 		const command = new UpdateElementStartTimeCommand(elements, startTime);
+		this.editor.command.execute({ command });
+	}
+
+	moveElementsByDelta({
+		elements,
+		timeDelta,
+	}: {
+		elements: { trackId: string; elementId: string }[];
+		timeDelta: number;
+	}): void {
+		const command = new BatchMoveElementsCommand(elements, timeDelta);
 		this.editor.command.execute({ command });
 	}
 

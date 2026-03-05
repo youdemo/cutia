@@ -1,3 +1,4 @@
+export { BatchMoveElementsCommand } from "./batch-move-elements";
 export { InsertElementCommand } from "./insert-element";
 export { DeleteElementsCommand } from "./delete-elements";
 export { DuplicateElementsCommand } from "./duplicate-elements";
