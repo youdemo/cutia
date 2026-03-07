@@ -450,6 +450,7 @@ function ElementContent({
 							audioBlob={audioBlob}
 							audioUrl={audioUrl}
 							duration={element.duration}
+							volume={element.volume}
 							height={24}
 							className="w-full"
 						/>

@@ -7,6 +7,7 @@ interface AudioWaveformProps {
 	audioBuffer?: AudioBuffer;
 	duration?: number;
 	height?: number;
+	volume?: number;
 	className?: string;
 }
 
@@ -47,6 +48,7 @@ export function AudioWaveform({
 	audioBuffer,
 	duration: durationProp,
 	height = 32,
+	volume = 1,
 	className = "",
 }: AudioWaveformProps) {
 	const waveformRef = useRef<HTMLDivElement>(null);
@@ -142,8 +144,10 @@ export function AudioWaveform({
 		);
 	}
 
+	const clampedVolume = Math.min(volume, 2);
+
 	return (
-		<div className={`relative ${className}`}>
+		<div className={`relative overflow-hidden ${className}`} style={{ height }}>
 			{isLoading && (
 				<div className="absolute inset-0 flex items-center justify-center">
 					<span className="text-foreground/60 text-xs">Loading...</span>
@@ -151,8 +155,12 @@ export function AudioWaveform({
 			)}
 			<div
 				ref={waveformRef}
-				className={`w-full ${isLoading ? "opacity-0" : "opacity-100"}`}
-				style={{ height }}
+				className={`w-full transition-transform duration-150 ${isLoading ? "opacity-0" : "opacity-100"}`}
+				style={{
+					height,
+					transform: `scaleY(${clampedVolume})`,
+					transformOrigin: "center",
+				}}
 			/>
 		</div>
 	);
