@@ -156,6 +156,10 @@ export interface TextElement extends BaseTimelineElement {
 	stroke?: TextStroke;
 	shadow?: TextShadow;
 	boxWidth?: number;
+	backgroundBorderRadius?: number;
+	backgroundOpacity?: number;
+	backgroundPaddingX?: number;
+	backgroundPaddingY?: number;
 }
 
 export interface StickerElement extends BaseTimelineElement {

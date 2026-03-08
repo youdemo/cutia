@@ -155,15 +155,20 @@ export class TextNode extends BaseNode<TextNodeParams> {
 		scaledFontSize: number;
 		textBaseline: CanvasTextBaseline;
 	}) {
-		if (this.params.backgroundColor) {
+		if (this.params.backgroundColor && this.params.backgroundColor !== "transparent") {
 			const metrics = context.measureText(this.params.content);
 			const ascent = metrics.actualBoundingBoxAscent ?? scaledFontSize * 0.8;
 			const descent =
 				metrics.actualBoundingBoxDescent ?? scaledFontSize * 0.2;
 			const textW = metrics.width;
 			const textH = ascent + descent;
-			const padX = 8;
-			const padY = 4;
+			const padX = this.params.backgroundPaddingX ?? 8;
+			const padY = this.params.backgroundPaddingY ?? 4;
+			const borderRadius = this.params.backgroundBorderRadius ?? 0;
+
+			const prevAlpha = context.globalAlpha;
+			const bgOpacity = this.params.backgroundOpacity ?? 1;
+			context.globalAlpha = prevAlpha * bgOpacity;
 
 			context.fillStyle = this.params.backgroundColor;
 			let bgLeft = -textW / 2;
@@ -172,13 +177,19 @@ export class TextNode extends BaseNode<TextNodeParams> {
 
 			const backgroundTop =
 				textBaseline === "bottom" ? -textH - padY : -textH / 2 - padY;
-			context.fillRect(
-				bgLeft - padX,
-				backgroundTop,
-				textW + padX * 2,
-				textH + padY * 2,
-			);
+			const bgW = textW + padX * 2;
+			const bgH = textH + padY * 2;
+			const bgX = bgLeft - padX;
 
+			if (borderRadius > 0 && context.roundRect) {
+				context.beginPath();
+				context.roundRect(bgX, backgroundTop, bgW, bgH, borderRadius);
+				context.fill();
+			} else {
+				context.fillRect(bgX, backgroundTop, bgW, bgH);
+			}
+
+			context.globalAlpha = prevAlpha;
 			context.fillStyle = this.params.color;
 		}
 
@@ -242,18 +253,30 @@ export class TextNode extends BaseNode<TextNodeParams> {
 			textX = scaledBoxWidth / 2;
 		}
 
-		if (this.params.backgroundColor) {
-			const padX = 8;
-			const padY = 4;
+		if (this.params.backgroundColor && this.params.backgroundColor !== "transparent") {
+			const padX = this.params.backgroundPaddingX ?? 8;
+			const padY = this.params.backgroundPaddingY ?? 4;
+			const borderRadius = this.params.backgroundBorderRadius ?? 0;
+
+			const prevAlpha = context.globalAlpha;
+			const bgOpacity = this.params.backgroundOpacity ?? 1;
+			context.globalAlpha = prevAlpha * bgOpacity;
 
 			context.fillStyle = this.params.backgroundColor;
-			context.fillRect(
-				-scaledBoxWidth / 2 - padX,
-				startY - lineHeight / 2 - padY,
-				scaledBoxWidth + padX * 2,
-				totalHeight + padY * 2,
-			);
+			const bgX = -scaledBoxWidth / 2 - padX;
+			const bgY = startY - lineHeight / 2 - padY;
+			const bgW = scaledBoxWidth + padX * 2;
+			const bgH = totalHeight + padY * 2;
 
+			if (borderRadius > 0 && context.roundRect) {
+				context.beginPath();
+				context.roundRect(bgX, bgY, bgW, bgH, borderRadius);
+				context.fill();
+			} else {
+				context.fillRect(bgX, bgY, bgW, bgH);
+			}
+
+			context.globalAlpha = prevAlpha;
 			context.fillStyle = this.params.color;
 		}
 
