@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AudioProperties } from "./audio-properties";
 import { VideoProperties } from "./video-properties";
 import { TextProperties } from "./text-properties";
+import { StickerProperties } from "./sticker-properties";
 import { EmptyView } from "./empty-view";
 import { useEditor } from "@/hooks/use-editor";
 import { useElementSelection } from "@/hooks/timeline/element/use-element-selection";
@@ -68,15 +69,24 @@ export function PropertiesPanel() {
 							trackId={grouped.image[0].track.id}
 						/>
 					)}
-					{grouped.audio && grouped.audio.length > 0 && (
-						<AudioProperties
-							_element={
-								grouped.audio[0]
-									.element as import("@/types/timeline").AudioElement
-							}
-							trackId={grouped.audio[0].track.id}
-						/>
-					)}
+				{grouped.audio && grouped.audio.length > 0 && (
+					<AudioProperties
+						_element={
+							grouped.audio[0]
+								.element as import("@/types/timeline").AudioElement
+						}
+						trackId={grouped.audio[0].track.id}
+					/>
+				)}
+				{grouped.sticker && grouped.sticker.length > 0 && (
+					<StickerProperties
+						_element={
+							grouped.sticker[0]
+								.element as import("@/types/timeline").StickerElement
+						}
+						trackId={grouped.sticker[0].track.id}
+					/>
+				)}
 				</ScrollArea>
 			) : (
 				<EmptyView />
